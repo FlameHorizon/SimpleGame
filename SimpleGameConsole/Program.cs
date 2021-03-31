@@ -13,25 +13,29 @@ namespace SimpleGameConsole {
             Console.WriteLine($"Your player name is {player.Name}");
             Console.WriteLine($"You stared fight with a monsert {monster.Name}");
 
-            // Determine, who starts first.
+            List<UnitBase> queueOrder;
+            queueOrder = GetQueueOrder(player, monster);
+
+            FightQueue queue = new FightQueue(queueOrder);
+            ConductBattle(queue);
+            Console.WriteLine($"Fight ended.");
+        }
+
+        private static List<UnitBase> GetQueueOrder(Player player, Monster monster)
+        {
             int plInit = player.Initiative * RollD20();
             int moInit = monster.Initiative * RollD20();
 
-            List<UnitBase> units;
             if (plInit >= moInit)
             {
-                units = new List<UnitBase> { player, monster };
                 Console.WriteLine($"Unit {player.Name} starts");
+                return new List<UnitBase> { player, monster };
             }
             else
             {
-                units = new List<UnitBase> { monster, player };
                 Console.WriteLine($"Unit {monster.Name} starts");
+                return new List<UnitBase> { monster, player };
             }
-
-            FightQueue queue = new FightQueue(units);
-            ConductBattle(queue);
-            Console.WriteLine($"Fight ended.");
         }
 
         private static int RollD20()
@@ -54,14 +58,13 @@ namespace SimpleGameConsole {
             while (queue.AllAlive())
             {
                 int dmg;
-                if (queue.CurrentUnit() is Player)
+                if (queue.CurrentUnit() is Player player)
                 {
                     Console.WriteLine("Choose type of attack: 1) Melee, 2) Magic");
                     ConsoleKeyInfo input = Console.ReadKey();
-                    if (input.Key == ConsoleKey.D1)
-                        dmg = queue.CurrentUnit().Attack + RollD4();
-                    else
-                        dmg = queue.CurrentUnit().Magic + RollD6();
+
+                    // TODO: Convert ConsoleKeyInfo value to AttackType enumerator.
+                    dmg = CalculatePlayerDamage(player, input);
                 }
                 else
                     dmg = queue.CurrentUnit().Attack + RollD4();
@@ -76,6 +79,13 @@ namespace SimpleGameConsole {
                 }
                 queue.AdvanceQueue();
             }
+        }
+
+        private static int CalculatePlayerDamage(Player player, ConsoleKeyInfo input)
+        {
+            return input.Key == ConsoleKey.D1 
+                ? player.Attack + RollD4() 
+                : player.Magic + RollD6();
         }
     }
 }
